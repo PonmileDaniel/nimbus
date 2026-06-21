@@ -1,3 +1,8 @@
+com/purplelove/Main.class
+com/purplelove/cache/CacheEntry.class
+com/purplelove/cache/CacheManager.class
 com/purplelove/parser/JsonParser.class
+com/purplelove/http/HttpService.class
+com/purplelove/cli/Menu.class
 com/purplelove/model/User.class
-com/purplelove/App.class
+com/purplelove/model/Post.class

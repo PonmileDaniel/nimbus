@@ -1,29 +1,30 @@
 package com.purplelove.cli;
 
-import com.purplelove.model.User;
-import com.purplelove.model.Post;
-import com.purplelove.parser.JsonParser;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
+import com.purplelove.http.HttpService;
+import com.purplelove.model.Post;
+import com.purplelove.model.User;
+import com.purplelove.parser.JsonParser;
 
 
 public class Menu {
-
-    private final HttpClient client = HttpClient.newHttpClient();
-    private final JsonParser parser = new JsonParser();
-    private final Scanner scanner = new Scanner(System.in);
+    private final HttpService httpService;
+    private final JsonParser parser;
+    private final Scanner scanner;
 
     private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
 
-    private void start() {
+    public Menu() {
+        this.httpService = new HttpService(BASE_URL);
+        this.parser = new JsonParser();
+        this.scanner = new Scanner(System.in);
+
+    }
+
+    public void start() {
         System.out.println("=== Nimbus cli ===");
-        System.out.println("A lightweight Http client with local caching (coming soon)")
+        System.out.println("A lightweight Http client with local caching (coming soon)");
         System.out.println();
 
         while (true) {
@@ -48,16 +49,15 @@ public class Menu {
         System.out.println("Choose an option:");
         System.out.println(" 1. Fetch Users");
         System.out.println(" 2. Fetch Posts");
-        System.out.println("  3. Exit");
+        System.out.println(" 3. Exit");
         System.out.print("Choice: ");
     }
     
     private void fetchUsers() {
         System.out.print("\nLoading... ");
-        String json = fetch("/users");
-        if (json == null) return;
 
         try{
+            String json = httpService.get("/users");
             List<User> users = parser.parseUsers(json);
             System.out.println("Found " + users.size() + " users:\n");
             users.forEach(user -> System.out.printf("  %d. %s (@%s)%n", user.id(), user.name(), user.username()));
@@ -70,8 +70,19 @@ public class Menu {
 
     private void fetchPosts() {
         System.out.print("\nLoading... ");
-        String json = fetch("/posts")
 
-
+        try {
+            String json = httpService.get("/posts");
+            List<Post> posts = parser.parsePosts(json);
+            System.out.println("Found " + posts.size() + " posts:\n");
+            posts.stream().limit(5).forEach(post -> 
+                System.out.printf("  [Post %d] %s%n", post.id(), post.title())
+            );
+            if (posts.size() > 5) {
+                System.out.printf("  ... and %d more%n", posts.size() - 5);
+            }
+        } catch (Exception e) {
+             System.err.println("Failed to parse posts: " + e.getMessage());
+        }
     }
 }
