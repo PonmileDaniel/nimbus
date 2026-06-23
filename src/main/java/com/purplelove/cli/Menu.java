@@ -2,22 +2,21 @@ package com.purplelove.cli;
 
 import java.util.List;
 import java.util.Scanner;
-import com.purplelove.http.HttpService;
+
+import com.purplelove.http.ApiClient;
 import com.purplelove.model.Post;
 import com.purplelove.model.User;
-import com.purplelove.parser.JsonParser;
+import com.purplelove.cache.CachePolicy;
 
 
 public class Menu {
-    private final HttpService httpService;
-    private final JsonParser parser;
+    private final ApiClient apiClient;
     private final Scanner scanner;
 
     private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
 
     public Menu() {
-        this.httpService = new HttpService(BASE_URL);
-        this.parser = new JsonParser();
+        this.apiClient = new ApiClient(BASE_URL, CachePolicy.FIVE_MINUTES);
         this.scanner = new Scanner(System.in);
 
     }
@@ -57,8 +56,7 @@ public class Menu {
         System.out.print("\nLoading... ");
 
         try{
-            String json = httpService.get("/users");
-            List<User> users = parser.parseUsers(json);
+            List<User> users = apiClient.getList("/users", User.class);
             System.out.println("Found " + users.size() + " users:\n");
             users.forEach(user -> System.out.printf("  %d. %s (@%s)%n", user.id(), user.name(), user.username()));
 
@@ -72,8 +70,7 @@ public class Menu {
         System.out.print("\nLoading... ");
 
         try {
-            String json = httpService.get("/posts");
-            List<Post> posts = parser.parsePosts(json);
+            List<Post> posts = apiClient.getList("/posts", Post.class);
             System.out.println("Found " + posts.size() + " posts:\n");
             posts.stream().limit(5).forEach(post -> 
                 System.out.printf("  [Post %d] %s%n", post.id(), post.title())

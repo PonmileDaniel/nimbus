@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -47,17 +48,30 @@ public class CacheManager {
      * Returns an empty Optional if the file does not exist or cannot be read.
      */
 
-    public Optional<CacheEntry> get(String endpoint) {
+    public Optional<CacheEntry> get(String endpoint, CachePolicy policy) {
+        if (policy == CachePolicy.NO_CACHE) {
+            return Optional.empty();
+        }
+
         Path filePath = getFilePath(endpoint);
-        if(Files.exists(filePath)) {
+        if(!Files.exists(filePath)) {
             return Optional.empty();
         }
 
         try {
-            String json = Files.readString(filePath);
+            Instant fileTime = Files.getLastModifiedTime(filePath).toInstant();
+            Instant now = Instant.now();
 
-            Instant createdAt = Files.getLastModifiedTime(filePath).toInstant();
-            return Optional.of(new CacheEntry(json, createdAt));
+            Duration age = Duration.between(fileTime, now);
+
+            if (age.compareTo(policy.getDuration()) > 0) {
+                Files.deleteIfExists(filePath);
+                System.out.println("[Cache] Expired for " + endpoint + " (age: " + age.toMinutes() + " min)");
+                return Optional.empty();
+            }
+            String json = Files.readString(filePath);
+            System.out.println("[Cache] HIT for " + endpoint + " (age: " + age.toMinutes() + " min)");
+            return Optional.of(new CacheEntry(json, fileTime));
 
         } catch (IOException e) {
             return Optional.empty();
