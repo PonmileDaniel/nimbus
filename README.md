@@ -1,143 +1,346 @@
-Milestone 1: Raw HTTP Call (Phase 1 - Part 1)
-Goal: Prove we can talk to the internet. No models, no parsing. Just raw text.
+# 🌤️ Nimbus
+
+> A lightweight Java HTTP client built from scratch with caching, retry logic, JSON parsing, and a Spring-inspired API.
+
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Maven](https://img.shields.io/badge/Maven-3.8+-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+---
+
+## 📖 About Nimbus
+
+Nimbus is an educational Java backend project designed to demonstrate how modern frameworks like Spring Boot handle HTTP communication, caching, retries, JSON serialization, and API abstraction under the hood.
+
+Instead of relying on framework magic, Nimbus implements these features from first principles using Java's standard libraries and a few carefully chosen dependencies.
+
+### Why I Built This
+
+Most developers learn how to use frameworks before understanding what those frameworks actually do.
+
+Nimbus was built to answer questions like:
+
+- How does a REST client work internally?
+- How does caching reduce network calls?
+- How are retries implemented?
+- How does JSON become Java objects?
+- What does Spring's `RestTemplate`, `WebClient`, and `@Cacheable` really do?
+
+By building these components manually, you gain a much deeper understanding of backend development.
+
+---
+
+## ✨ Features
+
+### 🌐 HTTP Client
+- Built using `java.net.http.HttpClient`
+- Supports GET requests
+- Request and response handling
+- Status code validation
+
+### 💾 Local File-Based Caching
+- Automatic cache storage
+- Cache expiration policies
+- Reduces unnecessary API requests
+- Cache hit/miss detection
+
+### 🔄 Retry Logic
+- Exponential backoff strategy
+- Configurable retry attempts
+- Handles temporary network failures gracefully
+
+### 📊 JSON Parsing
+- Jackson ObjectMapper integration
+- Automatic mapping between JSON and Java Records
+- Generic type-safe deserialization
+
+### 📝 Structured Logging
+- Timestamped logs
+- Multiple log levels
+- Easy debugging and monitoring
+
+### 🎯 Type-Safe API
+- Generic API methods
+- Compile-time type checking
+- Cleaner developer experience
+
+### 🖥️ Interactive CLI
+- Menu-driven interface
+- Fetch data from multiple endpoints
+- Demonstrates caching and retry behavior
+
+---
+
+## 🏗️ Architecture
+
+```text
+Nimbus
+│
+├── CLI Layer
+│   └── Menu
+│
+├── API Layer
+│   └── ApiClient
+│
+├── HTTP Layer
+│   └── HttpService
+│
+├── Cache Layer
+│   └── CacheManager
+│
+├── Retry Layer
+│   └── RetryHandler
+│
+├── JSON Layer
+│   └── JsonParser
+│
+├── Models
+│   ├── User
+│   ├── Post
+│   ├── Comment
+│   ├── Album
+│   ├── Photo
+│   └── Todo
+│
+└── Utilities
+    └── Logger
+```
+
+---
+
+## 📂 Project Structure
+
+```text
+src/main/java/com/purplelove/nimbus
+
+├── Main.java
+│
+├── cli
+│   └── Menu.java
+│
+├── http
+│   ├── ApiClient.java
+│   ├── HttpService.java
+│   ├── HttpMethod.java
+│   ├── ApiResponse.java
+│   └── RetryHandler.java
+│
+├── cache
+│   ├── CacheManager.java
+│   ├── CacheEntry.java
+│   └── CachePolicy.java
+│
+├── parser
+│   └── JsonParser.java
+│
+├── model
+│   ├── User.java
+│   ├── Post.java
+│   ├── Comment.java
+│   ├── Album.java
+│   ├── Photo.java
+│   └── Todo.java
+│
+├── exception
+│   ├── NimbusException.java
+│   ├── ApiException.java
+│   ├── CacheException.java
+│   └── JsonException.java
+│
+└── util
+    └── Logger.java
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Java 21+
+- Maven 3.8+
+
+### Clone Repository
+
+```bash
+git clone https://github.com/yourusername/nimbus.git
+cd nimbus
+```
+
+### Build Project
+
+```bash
+mvn clean compile
+```
 
-In Main.java, write a method that uses java.net.http.HttpClient.
+### Run Application
 
-Build a GET request to https://jsonplaceholder.typicode.com/users.
+```bash
+mvn exec:java -Dexec.mainClass=com.purplelove.nimbus.Main
+```
 
-Send the request and print the raw JSON response to the console.
+---
 
-Run it and verify you see a JSON array of 10 users.
+## 🖥️ Example Usage
 
-Milestone 2: Models & JSON Parsing (Phase 1 - Part 2)
-Goal: Turn that raw JSON into actual Java objects (Records).
+### Create API Client
+
+```java
+ApiClient client = new ApiClient(
+    "https://jsonplaceholder.typicode.com"
+);
+```
+
+### Fetch a List
+
+```java
+List<User> users = client.getList(
+    "/users",
+    User.class
+);
+```
+
+### Fetch a Single Resource
+
+```java
+User user = client.get(
+    "/users/1",
+    User.class
+);
+```
+
+### Custom Cache Policy
 
-Create a User record in the model package (int id, String name, String username, String email).
+```java
+ApiClient client = new ApiClient(
+    "https://jsonplaceholder.typicode.com",
+    CachePolicy.ONE_HOUR
+);
+```
+
+---
+
+## 💾 Cache Policies
+
+Nimbus supports multiple cache strategies:
+
+| Policy | Description |
+|----------|------------|
+| FOREVER | Never expires |
+| FIVE_MINUTES | Expires after 5 minutes |
+| ONE_HOUR | Expires after 1 hour |
+| NO_CACHE | Always fetch from network |
 
-Create a Post record in the model package (int id, int userId, String title, String body).
+Example:
 
-Create a JsonParser class in the parser package.
+```java
+CachePolicy.ONE_HOUR
+```
 
-Give JsonParser a Jackson ObjectMapper.
+---
 
-Write a method: List<User> parseUsers(String json).
+## 🔄 Retry Strategy
 
-Update Main to parse the JSON and print user.name() instead of the raw JSON.
+Nimbus automatically retries failed requests using exponential backoff.
 
-Milestone 3: The CLI Menu (Phase 1 - Part 3)
-Goal: Let the user choose what to fetch instead of hardcoding.
+Example timing:
 
-Create cli/Menu.java with a start() method.
+```text
+Attempt 1 → Immediate
+Attempt 2 → Wait 1 second
+Attempt 3 → Wait 2 seconds
+Attempt 4 → Wait 4 seconds
+```
 
-Use a Scanner to read user input.
+This improves resilience against temporary network issues.
 
-Print: 1. Fetch Users | 2. Fetch Posts | 3. Exit.
+---
 
-Loop until the user selects Exit.
+## 📋 Sample Logs
 
-Based on choice, call either fetchUsers() or fetchPosts() from Main.
+```text
+[INFO] Cache MISS for /users
+[INFO] Fetching data from network...
 
-Milestone 4: Separation of Concerns (The "HttpService")
-Goal: Stop putting HTTP logic inside Main. Build the first piece of our framework.
+[INFO] Cache HIT for /users
 
-Create http/HttpService.java.
+[WARN] Attempt 1 failed.
+[WARN] Retrying in 1000ms...
 
-Move the HttpClient instance into this class.
+[ERROR] Request failed after max retries.
+```
 
-Create a method: String get(String url) that returns the raw JSON string.
+---
 
-Refactor Main to use HttpService instead of building requests itself.
+## 🎓 Concepts Demonstrated
 
-Add basic error handling (if status code != 200, print an error).
+Nimbus covers many important Java backend concepts:
 
-Milestone 5: The Local Cache (Phase 2)
-Goal: Save JSON responses to the hard drive so we don't call the API twice.
+| Concept | Used In |
+|----------|---------|
+| OOP | Service architecture |
+| Records | Models |
+| Enums | Cache policies |
+| Generics | API responses |
+| Exception Handling | Custom exception hierarchy |
+| File I/O | Cache storage |
+| Java HTTP Client | Network communication |
+| Jackson | JSON serialization |
+| Dependency Injection | Constructor injection |
+| Logging | Monitoring and debugging |
 
-Create cache/CacheEntry.java (contains String jsonBody, Instant createdAt, String url).
+---
 
-Create util/FileUtils.java (methods to write a string to a file, read a string from a file, and check if a file exists).
+## 🧪 Future Improvements
 
-Create cache/CacheManager.java (initializes a ./nimbus-cache/ folder).
+- [ ] POST requests
+- [ ] PUT requests
+- [ ] DELETE requests
+- [ ] Async requests using CompletableFuture
+- [ ] Circuit Breaker pattern
+- [ ] JUnit 5 test suite
+- [ ] Annotation-based caching
+- [ ] Multiple API base URLs
+- [ ] Request interceptors
+- [ ] Metrics and monitoring
 
-Write save(String url, String json) that writes a .json file to disk.
+---
 
-Write Optional<String> get(String url) that reads the file if it exists.
+## 📚 What I Learned
 
-Integrate: Before calling the API, check the cache. If found, use it. If not, call API and save the result.
+Building Nimbus helped me understand:
 
-Milestone 6: Cache Expiration & Policies (Phase 5)
-Goal: Make the cache smart. Don't serve old data forever.
+- HTTP communication at a lower level
+- Caching strategies
+- Retry mechanisms
+- JSON serialization and deserialization
+- Clean architecture principles
+- Generic programming in Java
+- How backend frameworks abstract complexity
 
-Create cache/CachePolicy.java as an enum (FOREVER, FIVE_MINUTES, ONE_HOUR, NO_CACHE).
+---
 
-Add a cachePolicy field to CacheEntry.
+## 🤝 Contributing
 
-Update CacheManager.get(): before returning the JSON, check CacheEntry.createdAt against Instant.now().
+Contributions, suggestions, and improvements are welcome.
 
-If the duration has passed, delete the file and return Optional.empty() (forcing a new API call).
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Open a Pull Request
 
-Hardcode the policy to FIVE_MINUTES for now to test it (fetch, wait 5 mins, fetch again—or mock the clock).
+---
 
-Milestone 7: Retry Logic (Phase 4)
-Goal: Make the network resilient. If it fails, try again.
+## 📄 License
 
-Create http/RetryHandler.java.
+Licensed under the MIT License.
 
-Write a method: String getWithRetry(String url, int maxAttempts).
+---
 
-Inside, loop attempt = 1 to maxAttempts.
+## 👨‍💻 Author
 
-Try to execute the HTTP call. If it succeeds, return the result.
+Built by **purpleLove**
 
-If it fails (IOException or 5xx status), wait attempt * 1000 ms (exponential backoff) and try again.
+Backend Developer | Java Enthusiast | Software Engineer
 
-Only throw an exception if all attempts fail.
-
-Integrate this into HttpService so every request uses retries by default (e.g., 3 attempts).
-
-Milestone 8: Build the "API Client" Framework (Phase 3)
-Goal: Stop writing raw URLs. Create the RestTemplate/WebClient style API.
-
-Create http/HttpMethod.java enum (GET, POST, DELETE, PUT).
-
-Create http/ApiResponse.java (holds int statusCode, String body, boolean isSuccess).
-
-Create http/ApiClient.java. This will be our main entry point.
-
-Write a generic send(HttpMethod method, String endpoint, String body) method.
-
-Write convenience methods: get(String endpoint), post(String endpoint, String body), delete(String endpoint).
-
-Big Refactor: Change HttpService to use ApiClient internally. Now your Main can do apiClient.get("/users") instead of handling URLs manually. (Note: The base URL will be a constant in util/Constants.java).
-
-Milestone 9: Custom Exceptions & Logging
-Goal: Stop using System.out.println everywhere and handle failures properly.
-
-Create exception/ApiException.java (checked or unchecked? We'll use unchecked).
-
-Create exception/CacheException.java.
-
-Create exception/JsonException.java.
-
-Update HttpService, CacheManager, and JsonParser to throw these specific exceptions instead of generic ones.
-
-Create util/Logger.java. Write a simple info(), warn(), and error() method that prints with timestamps (java.time).
-
-Replace all System.out.println in the core classes (http, cache, parser) with this custom logger.
-
-Milestone 10: Final Polish & Advanced Models
-Goal: Make it a complete showcase of everything Java has to offer.
-
-Add the remaining models: Comment.java, Album.java, Photo.java, Todo.java.
-
-Update the CLI menu to allow fetching all endpoints from JSONPlaceholder.
-
-In Main, display the results beautifully (e.g., print "User 1: Leanne Graham" instead of the whole JSON).
-
-Ensure the CachePolicy can be configured per endpoint (e.g., cache Users for 1 hour, but Todos for 5 minutes).
-
-Bonus / Stretch Goal (Optional)
-Unit Testing: Add JUnit 5 to pom.xml. Write a test for CacheManager (using java.nio.file.Files to create temporary directories) and a test for RetryHandler (using a mocked HttpClient).
-
-Concurrency: Make the ApiClient thread-safe (since HttpClient is already thread-safe, just ensure your CacheManager handles concurrent file writes properly using FileLock or Atomic operations).
-
+> "Understand the abstraction before relying on it."
