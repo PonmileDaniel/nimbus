@@ -8,8 +8,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
+import com.purplelove.exception.CacheException;
+import com.purplelove.utils.Logger;
+
 public class CacheManager {
     private final Path cacheDir;
+    private static final Logger logger = Logger.getLogger(CacheManager.class);
 
     public CacheManager() {
         // Created a folder called "nimbus-cache" in the project root
@@ -18,11 +22,11 @@ public class CacheManager {
         try {
             if (!Files.exists(cacheDir)) {
                 Files.createDirectories(cacheDir);
-                System.out.println("[Cache] Created cache directory: " + cacheDir.toAbsolutePath());
+                logger.info("Created cache directory: " + cacheDir.toAbsolutePath());
             }
 
         } catch(IOException e) {
-            throw new RuntimeException("Failed to created cache directory", e);
+            throw new CacheException("Failed to created cache directory", e);
 
         }
     }
@@ -36,9 +40,10 @@ public class CacheManager {
 
         try {
             Files.writeString(filePath, jsonBody);
+            logger.debug("Saved cache for " + endpoint);
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save cache for " + endpoint, e);
+            throw new CacheException("Failed to save cache for " + endpoint, e);
 
         }
     }
@@ -66,14 +71,15 @@ public class CacheManager {
 
             if (age.compareTo(policy.getDuration()) > 0) {
                 Files.deleteIfExists(filePath);
-                System.out.println("[Cache] Expired for " + endpoint + " (age: " + age.toMinutes() + " min)");
+                logger.info("Cache expired for " + endpoint + " (age: " + age.toMinutes() + " min)");
                 return Optional.empty();
             }
             String json = Files.readString(filePath);
-            System.out.println("[Cache] HIT for " + endpoint + " (age: " + age.toMinutes() + " min)");
+            logger.info("Cache HIT for " + endpoint + " (age: " + age.toMinutes() + " min)");
             return Optional.of(new CacheEntry(json, fileTime));
 
         } catch (IOException e) {
+            logger.warn("Failed to read cache for " + endpoint + ": " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -85,8 +91,9 @@ public class CacheManager {
         Path filePath = getFilePath(endpoint);
         try {
             Files.deleteIfExists(filePath);
+            logger.debug("Invalidated cache for " + endpoint);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to invalidate cache for " + endpoint, e);
+            throw new CacheException("Failed to invalidate cache for " + endpoint, e);
         }
     }
 

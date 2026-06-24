@@ -10,13 +10,16 @@ import java.util.Optional;
 import com.purplelove.cache.CacheEntry;
 import com.purplelove.cache.CacheManager;
 import com.purplelove.cache.CachePolicy;
+import com.purplelove.exception.ApiException;
+import com.purplelove.utils.Logger;
 
 public class HttpService {
     private final HttpClient client;
     private final String baseUrl;
     private final CacheManager cacheManager;
     private final CachePolicy cachePolicy;
-    private final RetryHandler retryHandler;    
+    private final RetryHandler retryHandler;
+    private static final Logger logger = Logger.getLogger(HttpService.class);  
 
     public HttpService(String baseUrl) {
         this(baseUrl, CachePolicy.FIVE_MINUTES);
@@ -44,7 +47,7 @@ public class HttpService {
             return cached.get().jsonBody();
         }
 
-        System.out.println("[Cache] MISS for " + endpoint + " – fetching from network...");
+        logger.info("Cache MISS for " + endpoint + " – fetching from network...");
         String json = retryHandler.executeWithRetry(() -> {
             String fullUrl = baseUrl + endpoint;
             HttpRequest request = HttpRequest.newBuilder()
@@ -64,7 +67,7 @@ public class HttpService {
 
             if (cachePolicy.shouldCache()) {
                 cacheManager.save(endpoint, json);
-                System.out.println("[Cache] Saved response for " + endpoint);
+                logger.info("Saved response for " + endpoint);
             }
             return json;
         }
